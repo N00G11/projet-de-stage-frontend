@@ -1,0 +1,639 @@
+"use client"
+
+import type React from "react"
+import { useState, useRef, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import { Play, ChevronLeft, FileText, Database, RefreshCw, ArrowRight, History } from "lucide-react"
+import Link from "next/link"
+
+const API_BASE_URL = "https://localhost:8443/api"
+
+export default function NouveauWorkflowPage() {
+  const [token, setToken] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [currentStep, setCurrentStep] = useState(1)
+  const totalSteps = 4
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [filePath, setFilePath] = useState<string>("")
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [jobName, setJobName] = useState("")
+  const [description, setDescription] = useState("")
+  const [lien, setLien] = useState("")
+  const [cle, setCle] = useState("")
+  const [type, setType] = useState("")
+  const [newKeys, setNewKeys] = useState<string[]>([])
+  const [fields, setFields] = useState<string[]>([])
+
+  useEffect(() => {
+    // Client-side only
+    setToken(localStorage.getItem("authToken"))
+  }, [])
+
+  const addNewKey = (newKey: string) => {
+    setNewKeys((prevKeys) => [...prevKeys, newKey])
+  }
+
+  const fetchFields = async () => {
+    if (!token) return
+
+    try {
+      //setIsLoading(true)
+      const response = await fetch(`${API_BASE_URL}/prosseces/oldKeys`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || "Erreur lors de la récupération des données")
+      }
+
+      const result = await response.json()
+      setFields(Array.isArray(result) ? result : [])
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Erreur inconnue")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (token) {
+      fetchFields()
+    }
+  }, [token])
+
+  const handleStep1 = async () => {
+    if (!token) {
+      setError("Token d'authentification manquant")
+      return false
+    }
+
+    try {
+      setIsLoading(true)
+      const response = await fetch(`${API_BASE_URL}/user/1/newintegration`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ jobName, description }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || "Erreur lors de l'enregistrement du job")
+      }
+
+      return true
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Une erreur est survenue lors de l'enregistrement du job")
+      return false
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleStep2 = async () => {
+    if (!token) {
+      setError("Token d'authentification manquant")
+      return false
+    }
+
+    try {
+      setIsLoading(true)
+      const response = await fetch(`${API_BASE_URL}/prosseces/datasource`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ lien, cle, type }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || "Erreur lors de l'enregistrement de la source")
+      }
+      fetchFields()
+      return true
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Une erreur est survenue lors de l'enregistrement de la source")
+      return false
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleStep3 = async () => {
+    if (!token) {
+      setError("Token d'authentification manquant")
+      return false
+    }
+
+    try {
+      setIsLoading(true)
+      const response = await fetch(`${API_BASE_URL}/prosseces/transformation`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ newKeys }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || "Erreur lors de l'enregistrement de la transformation")
+      }
+
+      return true
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Une erreur est survenue lors de l'enregistrement de la transformation")
+      return false
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleNext = async () => {
+    if (currentStep >= totalSteps) return
+
+    let success = false
+
+    switch(currentStep) {
+      case 1:
+        success = await handleStep1()
+        break
+      case 2:
+        success = await handleStep2()
+        break
+      case 3:
+        success = await handleStep3()
+        break
+      default:
+        break
+    }
+
+    if (success && currentStep < totalSteps) {
+      setCurrentStep(currentStep + 1)
+    }
+  }
+
+  const handlePrevious = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1)
+    }
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0]
+      setSelectedFile(file)
+      setFilePath(file.name)
+      setLien(file.name)
+    }
+  }
+
+  const handleSubmit = async () => {
+    if (!token) {
+      setError("Token d'authentification manquant")
+      return
+    }
+
+    try {
+      setIsLoading(true)
+      const response = await fetch(`${API_BASE_URL}/prosseces/datatarget`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ lien, cle, type }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || "Erreur lors de l'enregistrement de la cible")
+      }
+
+      window.location.href = "/monitoring/execution"
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Une erreur est survenue lors de l'enregistrement de la cible")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <div className="flex min-h-screen w-full flex-col">
+      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <Link href="/" className="mr-2">
+              <Button variant="ghost" size="icon">
+                <ChevronLeft className="h-4 w-4" />
+                <span className="sr-only">Retour</span>
+              </Button>
+            </Link>
+            <h1 className="text-2xl font-bold tracking-tight">Nouveau Workflow</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link href="/history">
+              <Button variant="outline" size="sm">
+                <History className="mr-2 h-4 w-4" />
+                Historique
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center space-x-2">
+            <div
+              className={`flex h-10 w-10 items-center justify-center rounded-full ${
+                currentStep >= 1 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              }`}
+            >
+              <FileText className="h-5 w-5" />
+            </div>
+            <div className={`h-0.5 w-12 ${currentStep > 1 ? "bg-primary" : "bg-muted"}`}></div>
+            <div
+              className={`flex h-10 w-10 items-center justify-center rounded-full ${
+                currentStep >= 2 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              }`}
+            >
+              <Database className="h-5 w-5" />
+            </div>
+            <div className={`h-0.5 w-12 ${currentStep > 2 ? "bg-primary" : "bg-muted"}`}></div>
+            <div
+              className={`flex h-10 w-10 items-center justify-center rounded-full ${
+                currentStep >= 3 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              }`}
+            >
+              <RefreshCw className="h-5 w-5" />
+            </div>
+            <div className={`h-0.5 w-12 ${currentStep > 3 ? "bg-primary" : "bg-muted"}`}></div>
+            <div
+              className={`flex h-10 w-10 items-center justify-center rounded-full ${
+                currentStep >= 4 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              }`}
+            >
+              <ArrowRight className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Étape {currentStep} sur {totalSteps}
+          </div>
+        </div>
+
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <span className="block sm:inline">{error}</span>
+            <button className="absolute top-0 right-0 px-4 py-3" onClick={() => setError(null)}>
+              <span className="text-red-700">×</span>
+            </button>
+          </div>
+        )}
+
+        {isLoading && (
+          <div className="flex justify-center items-center p-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        )}
+
+        {currentStep === 1 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Informations Générales</CardTitle>
+              <CardDescription>Définissez les informations de base pour votre workflow</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nom du Workflow</Label>
+                <Input 
+                  id="name" 
+                  placeholder="Ex: Import CSV vers Base de Données"
+                  value={jobName}
+                  onChange={(e) => setJobName(e.target.value)}
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea 
+                  id="description" 
+                  placeholder="Décrivez le but de ce workflow..." 
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="min-h-[100px]"
+                  disabled={isLoading}
+                />
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <Button variant="outline" disabled={currentStep === 1 || isLoading}>
+                Précédent
+              </Button>
+              <Button onClick={handleNext} disabled={!jobName || isLoading}>
+                Suivant
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </CardFooter>
+          </Card>
+        )}
+
+        {currentStep === 2 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Configuration de la Source</CardTitle>
+              <CardDescription>Configurez la source de données pour votre workflow</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="fichier" className="space-y-4">
+                <TabsList className="w-full">
+                  <TabsTrigger value="fichier" className="flex-1" disabled={isLoading}>
+                    Fichier
+                  </TabsTrigger>
+                  <TabsTrigger value="api" className="flex-1" disabled={isLoading}>
+                    API
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="fichier" className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="file-type">Type de Fichier</Label>
+                    <Select 
+                      defaultValue="csv" 
+                      onValueChange={setType}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionnez un type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="csv">CSV</SelectItem>
+                        <SelectItem value="json">JSON</SelectItem>
+                        <SelectItem value="excel">Excel</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="file-path">Fichier</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="file-path"
+                        placeholder="Sélectionnez un fichier"
+                        value={lien}
+                        onChange={(e) => setLien(e.target.value)}
+                        className="flex-1"
+                        disabled={isLoading}
+                      />
+                      <label htmlFor="file-upload" className="cursor-pointer">
+                        <div className="relative">
+                          <input
+                            type="file"
+                            id="file-upload"
+                            ref={fileInputRef}
+                            className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
+                            onChange={handleFileChange}
+                            disabled={isLoading}
+                          />
+                          <Button variant="outline" type="button" className="relative z-0" disabled={isLoading}>
+                            Parcourir
+                          </Button>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="delimiter">Délimiteur (pour CSV)</Label>
+                    <Select defaultValue="comma" disabled={isLoading}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionnez un délimiteur" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="comma">Virgule (,)</SelectItem>
+                        <SelectItem value="semicolon">Point-virgule (;)</SelectItem>
+                        <SelectItem value="tab">Tabulation</SelectItem>
+                        <SelectItem value="pipe">Pipe (|)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </TabsContent>
+                <TabsContent value="api" className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="api-url">URL de l'API</Label>
+                    <Input
+                      id="api-url"
+                      placeholder="https://api.exemple.com/data"
+                      value={lien}
+                      onChange={(e) => {
+                        setLien(e.target.value)
+                        setType("api")
+                      }}
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="api-method">Méthode</Label>
+                    <Input 
+                      id="api-method" 
+                      value="GET" 
+                      readOnly 
+                      className="bg-slate-50 dark:bg-slate-800" 
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="api-headers">En-têtes (format JSON)</Label>
+                    <Textarea
+                      id="api-headers"
+                      placeholder='{"Authorization": "Bearer token", "Content-Type": "application/json"}'
+                      className="min-h-[100px]"
+                      value={cle}
+                      onChange={(e) => setCle(e.target.value)}
+                      disabled={isLoading}
+                    />
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <Button variant="outline" onClick={handlePrevious} disabled={isLoading}>
+                Précédent
+              </Button>
+              <Button onClick={handleNext} disabled={(!lien || !type) || isLoading}>
+                Suivant
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </CardFooter>
+          </Card>
+        )}
+
+        {currentStep === 3 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Transformation</CardTitle>
+              <CardDescription>Configurez le mappage des champs entre la source et la destination</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-4">
+                {fields && Array.isArray(fields) && fields.map((field, index) => (
+                  <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                    <div className="space-y-2">
+                      <Label>Champ Source</Label>
+                      <Input
+                        value={field}
+                        readOnly
+                        className="bg-slate-50 dark:bg-slate-800"
+                        disabled={isLoading}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Champ Destination</Label>
+                      <Input 
+                        defaultValue={field}
+                        onChange={(e) => addNewKey(e.target.value)}
+                        disabled={isLoading}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <Button variant="outline" onClick={handlePrevious} disabled={isLoading}>
+                Précédent
+              </Button>
+              <Button onClick={handleNext} disabled={isLoading}>
+                Suivant
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </CardFooter>
+          </Card>
+        )}
+
+        {currentStep === 4 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Configuration de la Destination</CardTitle>
+              <CardDescription>Configurez la destination des données transformées</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="fichier" className="space-y-4">
+                <TabsList className="w-full">
+                  <TabsTrigger value="fichier" className="flex-1" disabled={isLoading}>
+                    Fichier
+                  </TabsTrigger>
+                  <TabsTrigger value="api" className="flex-1" disabled={isLoading}>
+                    API
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="fichier" className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="dest-file-type">Type de Fichier</Label>
+                    <Select 
+                      defaultValue="csv" 
+                      onValueChange={setType}
+                      disabled={isLoading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionnez un type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="csv">CSV</SelectItem>
+                        <SelectItem value="json">JSON</SelectItem>
+                        <SelectItem value="excel">Excel</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="dest-file-path">Chemin de Destination</Label>
+                    <Input 
+                      id="dest-file-path" 
+                      placeholder="/chemin/vers/fichier_destination.csv"
+                      value={lien}
+                      onChange={(e) => setLien(e.target.value)}
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="dest-delimiter">Délimiteur (pour CSV)</Label>
+                    <Select defaultValue="comma" disabled={isLoading}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionnez un délimiteur" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="comma">Virgule (,)</SelectItem>
+                        <SelectItem value="semicolon">Point-virgule (;)</SelectItem>
+                        <SelectItem value="tab">Tabulation</SelectItem>
+                        <SelectItem value="pipe">Pipe (|)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </TabsContent>
+                <TabsContent value="api" className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="dest-api-url">URL de l'API</Label>
+                    <Input 
+                      id="dest-api-url" 
+                      placeholder="https://api.exemple.com/data"
+                      value={lien}
+                      onChange={(e) => {
+                        setLien(e.target.value)
+                        setType("api")
+                      }}
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="dest-api-method">Méthode</Label>
+                    <Select defaultValue="post" disabled={isLoading}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionnez une méthode" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="post">POST</SelectItem>
+                        <SelectItem value="put">PUT</SelectItem>
+                        <SelectItem value="patch">PATCH</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="dest-api-headers">En-têtes (format JSON)</Label>
+                    <Textarea
+                      id="dest-api-headers"
+                      placeholder='{"Authorization": "Bearer token", "Content-Type": "application/json"}'
+                      className="min-h-[100px]"
+                      value={cle}
+                      onChange={(e) => setCle(e.target.value)}
+                      disabled={isLoading}
+                    />
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <Button variant="outline" onClick={handlePrevious} disabled={isLoading}>
+                Précédent
+              </Button>
+              <Button onClick={handleSubmit} disabled={(!lien || !type) || isLoading}>
+                <Play className="mr-2 h-4 w-4" />
+                Exécuter
+              </Button>
+            </CardFooter>
+          </Card>
+        )}
+      </main>
+    </div>
+  )
+}
