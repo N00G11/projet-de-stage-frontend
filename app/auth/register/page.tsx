@@ -74,7 +74,7 @@ export default function RegisterPage() {
       }
 
       // Rediriger vers la page de nouveau workflow
-      router.push("/nouveau-workflow")
+      router.push("/auth/login")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue lors de l'inscription")
     } finally {

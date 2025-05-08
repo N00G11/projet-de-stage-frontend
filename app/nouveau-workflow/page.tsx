@@ -28,7 +28,7 @@ export default function NouveauWorkflowPage() {
   const [lien, setLien] = useState("")
   const [cle, setCle] = useState("")
   const [type, setType] = useState("")
-  const [newKeys, setNewKeys] = useState<string[]>([])
+  const [newKeys, setNewKeys] = useState<string[]>([]);
   const [fields, setFields] = useState<string[]>([])
 
   useEffect(() => {
@@ -36,9 +36,11 @@ export default function NouveauWorkflowPage() {
     setToken(localStorage.getItem("authToken"))
   }, [])
 
-  const addNewKey = (newKey: string) => {
-    setNewKeys((prevKeys) => [...prevKeys, newKey])
-  }
+  const handleDestinationChange = (value: string, index: number) => {
+    const updatedFields = [...newKeys]; // On part des champs source comme base
+    updatedFields[index] = value || "none"; // Si vide, on met "none"
+    setNewKeys(updatedFields);
+  };
 
   const fetchFields = async () => {
     if (!token) return
@@ -143,14 +145,17 @@ export default function NouveauWorkflowPage() {
 
     try {
       setIsLoading(true)
-      const response = await fetch(`${API_BASE_URL}/prosseces/transformation`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({ newKeys }),
-      })
+       // Préparer le tableau final avec "none" pour les champs vides
+    const transformationData = newKeys.map(key => key || "none");
+    
+    const response = await fetch(`${API_BASE_URL}/prosseces/transformation`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(transformationData), // Envoie direct du tableau
+    });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
@@ -487,27 +492,27 @@ export default function NouveauWorkflowPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-4">
-                {fields && Array.isArray(fields) && fields.map((field, index) => (
-                  <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
-                    <div className="space-y-2">
-                      <Label>Champ Source</Label>
-                      <Input
-                        value={field}
-                        readOnly
-                        className="bg-slate-50 dark:bg-slate-800"
-                        disabled={isLoading}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Champ Destination</Label>
-                      <Input 
-                        defaultValue={field}
-                        onChange={(e) => addNewKey(e.target.value)}
-                        disabled={isLoading}
-                      />
-                    </div>
+              {fields && Array.isArray(fields) && fields.map((field, index) => (
+                <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                  <div className="space-y-2">
+                    <Label>Champ Source</Label>
+                    <Input
+                      value={field}
+                      readOnly
+                      className="bg-slate-50 dark:bg-slate-800"
+                      disabled={isLoading}
+                    />
                   </div>
-                ))}
+                  <div className="space-y-2">
+                    <Label>Champ Destination</Label>
+                    <Input 
+                      onChange={(e) => handleDestinationChange(e.target.value, index)}
+                      disabled={isLoading}
+                      placeholder="Entrez le nom du champ ou laissez vide pour 'none'"
+                    />
+                  </div>
+                </div>
+              ))}
               </div>
             </CardContent>
             <CardFooter className="flex justify-between">
