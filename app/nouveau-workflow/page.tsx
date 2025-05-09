@@ -16,6 +16,7 @@ const API_BASE_URL = "https://localhost:8443/api"
 
 export default function NouveauWorkflowPage() {
   const [token, setToken] = useState<string | null>(null)
+  const [username, setUsername] = useState<String | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
@@ -34,11 +35,16 @@ export default function NouveauWorkflowPage() {
   useEffect(() => {
     // Client-side only
     setToken(localStorage.getItem("authToken"))
+    setUsername(localStorage.getItem("username"))
   }, [])
 
+  useEffect(() =>{
+    
+  })
+
   const handleDestinationChange = (value: string, index: number) => {
-    const updatedFields = [...newKeys]; // On part des champs source comme base
-    updatedFields[index] = value || "none"; // Si vide, on met "none"
+    const updatedFields = [...newKeys];
+    updatedFields[index] = value || "none";
     setNewKeys(updatedFields);
   };
 
@@ -46,7 +52,6 @@ export default function NouveauWorkflowPage() {
     if (!token) return
 
     try {
-      //setIsLoading(true)
       const response = await fetch(`${API_BASE_URL}/prosseces/oldKeys`, {
         method: "GET",
         headers: {
@@ -83,7 +88,7 @@ export default function NouveauWorkflowPage() {
 
     try {
       setIsLoading(true)
-      const response = await fetch(`${API_BASE_URL}/user/1/newintegration`, {
+      const response = await fetch(`${API_BASE_URL}/user/${username}/newintegration`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -145,17 +150,16 @@ export default function NouveauWorkflowPage() {
 
     try {
       setIsLoading(true)
-       // Préparer le tableau final avec "none" pour les champs vides
-    const transformationData = newKeys.map(key => key || "none");
-    
-    const response = await fetch(`${API_BASE_URL}/prosseces/transformation`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-      body: JSON.stringify(transformationData), // Envoie direct du tableau
-    });
+      const transformationData = newKeys.map(key => key || "none");
+
+      const response = await fetch(`${API_BASE_URL}/prosseces/transformation`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(transformationData),
+      });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
@@ -241,22 +245,22 @@ export default function NouveauWorkflowPage() {
   }
 
   return (
-    <div className="flex min-h-screen w-full flex-col">
+    <div className="flex min-h-screen w-full flex-col bg-blue-50/50">
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <Link href="/" className="mr-2">
-              <Button variant="ghost" size="icon">
-                <ChevronLeft className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="hover:bg-blue-100">
+                <ChevronLeft className="h-4 w-4 text-blue-600" />
                 <span className="sr-only">Retour</span>
               </Button>
             </Link>
-            <h1 className="text-2xl font-bold tracking-tight">Nouveau Workflow</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-blue-800">Nouveau Workflow</h1>
           </div>
           <div className="flex items-center gap-2">
             <Link href="/history">
-              <Button variant="outline" size="sm">
-                <History className="mr-2 h-4 w-4" />
+              <Button variant="outline" size="sm" className="border-blue-300 text-blue-600 hover:bg-blue-50">
+                <History className="mr-2 h-4 w-4 text-blue-500" />
                 Historique
               </Button>
             </Link>
@@ -267,37 +271,37 @@ export default function NouveauWorkflowPage() {
           <div className="flex items-center space-x-2">
             <div
               className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                currentStep >= 1 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                currentStep >= 1 ? "bg-blue-600 text-white" : "bg-blue-100 text-blue-600"
               }`}
             >
               <FileText className="h-5 w-5" />
             </div>
-            <div className={`h-0.5 w-12 ${currentStep > 1 ? "bg-primary" : "bg-muted"}`}></div>
+            <div className={`h-0.5 w-12 ${currentStep > 1 ? "bg-blue-600" : "bg-blue-200"}`}></div>
             <div
               className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                currentStep >= 2 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                currentStep >= 2 ? "bg-blue-600 text-white" : "bg-blue-100 text-blue-600"
               }`}
             >
               <Database className="h-5 w-5" />
             </div>
-            <div className={`h-0.5 w-12 ${currentStep > 2 ? "bg-primary" : "bg-muted"}`}></div>
+            <div className={`h-0.5 w-12 ${currentStep > 2 ? "bg-blue-600" : "bg-blue-200"}`}></div>
             <div
               className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                currentStep >= 3 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                currentStep >= 3 ? "bg-blue-600 text-white" : "bg-blue-100 text-blue-600"
               }`}
             >
               <RefreshCw className="h-5 w-5" />
             </div>
-            <div className={`h-0.5 w-12 ${currentStep > 3 ? "bg-primary" : "bg-muted"}`}></div>
+            <div className={`h-0.5 w-12 ${currentStep > 3 ? "bg-blue-600" : "bg-blue-200"}`}></div>
             <div
               className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                currentStep >= 4 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                currentStep >= 4 ? "bg-blue-600 text-white" : "bg-blue-100 text-blue-600"
               }`}
             >
               <ArrowRight className="h-5 w-5" />
             </div>
           </div>
-          <div className="text-sm text-muted-foreground">
+          <div className="text-sm text-blue-600">
             Étape {currentStep} sur {totalSteps}
           </div>
         </div>
@@ -313,44 +317,51 @@ export default function NouveauWorkflowPage() {
 
         {isLoading && (
           <div className="flex justify-center items-center p-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>
         )}
 
         {currentStep === 1 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Informations Générales</CardTitle>
-              <CardDescription>Définissez les informations de base pour votre workflow</CardDescription>
+          <Card className="border-blue-200">
+            <CardHeader className="border-b border-blue-100">
+              <CardTitle className="text-blue-800">Informations Générales</CardTitle>
+              <CardDescription className="text-blue-600">
+                Définissez les informations de base pour votre workflow
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nom du Workflow</Label>
+                <Label htmlFor="name" className="text-blue-700">Nom du Workflow</Label>
                 <Input 
                   id="name" 
                   placeholder="Ex: Import CSV vers Base de Données"
                   value={jobName}
                   onChange={(e) => setJobName(e.target.value)}
                   disabled={isLoading}
+                  className="border-blue-300 focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description" className="text-blue-700">Description</Label>
                 <Textarea 
                   id="description" 
                   placeholder="Décrivez le but de ce workflow..." 
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="min-h-[100px]"
+                  className="min-h-[100px] border-blue-300 focus:border-blue-500 focus:ring-blue-500"
                   disabled={isLoading}
                 />
               </div>
             </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline" disabled={currentStep === 1 || isLoading}>
+            <CardFooter className="flex justify-between pt-4 border-t border-blue-100">
+              <Button variant="outline" disabled={currentStep === 1 || isLoading} className="border-blue-300 text-blue-600 hover:bg-blue-50">
                 Précédent
               </Button>
-              <Button onClick={handleNext} disabled={!jobName || isLoading}>
+              <Button 
+                onClick={handleNext} 
+                disabled={!jobName || isLoading}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
                 Suivant
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -359,29 +370,39 @@ export default function NouveauWorkflowPage() {
         )}
 
         {currentStep === 2 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Configuration de la Source</CardTitle>
-              <CardDescription>Configurez la source de données pour votre workflow</CardDescription>
+          <Card className="border-blue-200">
+            <CardHeader className="border-b border-blue-100">
+              <CardTitle className="text-blue-800">Configuration de la Source</CardTitle>
+              <CardDescription className="text-blue-600">
+                Configurez la source de données pour votre workflow
+              </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-4">
               <Tabs defaultValue="fichier" className="space-y-4">
-                <TabsList className="w-full">
-                  <TabsTrigger value="fichier" className="flex-1" disabled={isLoading}>
+                <TabsList className="w-full bg-blue-50">
+                  <TabsTrigger 
+                    value="fichier" 
+                    className="flex-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                    disabled={isLoading}
+                  >
                     Fichier
                   </TabsTrigger>
-                  <TabsTrigger value="api" className="flex-1" disabled={isLoading}>
+                  <TabsTrigger 
+                    value="api" 
+                    className="flex-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                    disabled={isLoading}
+                  >
                     API
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="fichier" className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="file-type">Type de Fichier</Label>
+                    <Label htmlFor="file-type" className="text-blue-700">Type de Fichier</Label>
                     <Select 
                       defaultValue="csv" 
                       onValueChange={setType}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="border-blue-300 focus:ring-blue-500">
                         <SelectValue placeholder="Sélectionnez un type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -392,14 +413,14 @@ export default function NouveauWorkflowPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="file-path">Fichier</Label>
+                    <Label htmlFor="file-path" className="text-blue-700">Fichier</Label>
                     <div className="flex gap-2">
                       <Input
                         id="file-path"
                         placeholder="Sélectionnez un fichier"
                         value={lien}
                         onChange={(e) => setLien(e.target.value)}
-                        className="flex-1"
+                        className="flex-1 border-blue-300 focus:border-blue-500 focus:ring-blue-500"
                         disabled={isLoading}
                       />
                       <label htmlFor="file-upload" className="cursor-pointer">
@@ -412,7 +433,12 @@ export default function NouveauWorkflowPage() {
                             onChange={handleFileChange}
                             disabled={isLoading}
                           />
-                          <Button variant="outline" type="button" className="relative z-0" disabled={isLoading}>
+                          <Button 
+                            variant="outline" 
+                            type="button" 
+                            className="relative z-0 border-blue-300 text-blue-600 hover:bg-blue-50" 
+                            disabled={isLoading}
+                          >
                             Parcourir
                           </Button>
                         </div>
@@ -420,9 +446,9 @@ export default function NouveauWorkflowPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="delimiter">Délimiteur (pour CSV)</Label>
+                    <Label htmlFor="delimiter" className="text-blue-700">Délimiteur (pour CSV)</Label>
                     <Select defaultValue="comma" disabled={isLoading}>
-                      <SelectTrigger>
+                      <SelectTrigger className="border-blue-300 focus:ring-blue-500">
                         <SelectValue placeholder="Sélectionnez un délimiteur" />
                       </SelectTrigger>
                       <SelectContent>
@@ -436,7 +462,7 @@ export default function NouveauWorkflowPage() {
                 </TabsContent>
                 <TabsContent value="api" className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="api-url">URL de l'API</Label>
+                    <Label htmlFor="api-url" className="text-blue-700">URL de l'API</Label>
                     <Input
                       id="api-url"
                       placeholder="https://api.exemple.com/data"
@@ -445,25 +471,26 @@ export default function NouveauWorkflowPage() {
                         setLien(e.target.value)
                         setType("api")
                       }}
+                      className="border-blue-300 focus:border-blue-500 focus:ring-blue-500"
                       disabled={isLoading}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="api-method">Méthode</Label>
+                    <Label htmlFor="api-method" className="text-blue-700">Méthode</Label>
                     <Input 
                       id="api-method" 
                       value="GET" 
                       readOnly 
-                      className="bg-slate-50 dark:bg-slate-800" 
+                      className="bg-blue-50 border-blue-200 text-blue-600" 
                       disabled={isLoading}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="api-headers">En-têtes (format JSON)</Label>
+                    <Label htmlFor="api-headers" className="text-blue-700">En-têtes (format JSON)</Label>
                     <Textarea
                       id="api-headers"
                       placeholder='{"Authorization": "Bearer token", "Content-Type": "application/json"}'
-                      className="min-h-[100px]"
+                      className="min-h-[100px] border-blue-300 focus:border-blue-500 focus:ring-blue-500"
                       value={cle}
                       onChange={(e) => setCle(e.target.value)}
                       disabled={isLoading}
@@ -472,11 +499,20 @@ export default function NouveauWorkflowPage() {
                 </TabsContent>
               </Tabs>
             </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline" onClick={handlePrevious} disabled={isLoading}>
+            <CardFooter className="flex justify-between pt-4 border-t border-blue-100">
+              <Button 
+                variant="outline" 
+                onClick={handlePrevious} 
+                disabled={isLoading}
+                className="border-blue-300 text-blue-600 hover:bg-blue-50"
+              >
                 Précédent
               </Button>
-              <Button onClick={handleNext} disabled={(!lien || !type) || isLoading}>
+              <Button 
+                onClick={handleNext} 
+                disabled={(!lien || !type) || isLoading}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
                 Suivant
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -485,41 +521,53 @@ export default function NouveauWorkflowPage() {
         )}
 
         {currentStep === 3 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Transformation</CardTitle>
-              <CardDescription>Configurez le mappage des champs entre la source et la destination</CardDescription>
+          <Card className="border-blue-200">
+            <CardHeader className="border-b border-blue-100">
+              <CardTitle className="text-blue-800">Transformation</CardTitle>
+              <CardDescription className="text-blue-600">
+                Configurez le mappage des champs entre la source et la destination
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-4">
               <div className="space-y-4">
               {fields && Array.isArray(fields) && fields.map((field, index) => (
                 <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
                   <div className="space-y-2">
-                    <Label>Champ Source</Label>
+                    <Label className="text-blue-700">Champ Source</Label>
                     <Input
                       value={field}
                       readOnly
-                      className="bg-slate-50 dark:bg-slate-800"
+                      className="bg-blue-50 border-blue-200 text-blue-600"
                       disabled={isLoading}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Champ Destination</Label>
+                    <Label className="text-blue-700">Champ Destination</Label>
                     <Input 
                       onChange={(e) => handleDestinationChange(e.target.value, index)}
                       disabled={isLoading}
                       placeholder="Entrez le nom du champ ou laissez vide pour 'none'"
+                      className="border-blue-300 focus:border-blue-500 focus:ring-blue-500"
                     />
                   </div>
                 </div>
               ))}
               </div>
             </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline" onClick={handlePrevious} disabled={isLoading}>
+            <CardFooter className="flex justify-between pt-4 border-t border-blue-100">
+              <Button 
+                variant="outline" 
+                onClick={handlePrevious} 
+                disabled={isLoading}
+                className="border-blue-300 text-blue-600 hover:bg-blue-50"
+              >
                 Précédent
               </Button>
-              <Button onClick={handleNext} disabled={isLoading}>
+              <Button 
+                onClick={handleNext} 
+                disabled={isLoading}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
                 Suivant
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -528,30 +576,40 @@ export default function NouveauWorkflowPage() {
         )}
 
         {currentStep === 4 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Configuration de la Destination</CardTitle>
-              <CardDescription>Configurez la destination des données transformées</CardDescription>
+          <Card className="border-blue-200">
+            <CardHeader className="border-b border-blue-100">
+              <CardTitle className="text-blue-800">Configuration de la Destination</CardTitle>
+              <CardDescription className="text-blue-600">
+                Configurez la destination des données transformées
+              </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-4">
               <Tabs defaultValue="fichier" className="space-y-4">
-                <TabsList className="w-full">
-                  <TabsTrigger value="fichier" className="flex-1" disabled={isLoading}>
+                <TabsList className="w-full bg-blue-50">
+                  <TabsTrigger 
+                    value="fichier" 
+                    className="flex-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                    disabled={isLoading}
+                  >
                     Fichier
                   </TabsTrigger>
-                  <TabsTrigger value="api" className="flex-1" disabled={isLoading}>
+                  <TabsTrigger 
+                    value="api" 
+                    className="flex-1 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                    disabled={isLoading}
+                  >
                     API
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="fichier" className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="dest-file-type">Type de Fichier</Label>
+                    <Label htmlFor="dest-file-type" className="text-blue-700">Type de Fichier</Label>
                     <Select 
                       defaultValue="csv" 
                       onValueChange={setType}
                       disabled={isLoading}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="border-blue-300 focus:ring-blue-500">
                         <SelectValue placeholder="Sélectionnez un type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -562,19 +620,20 @@ export default function NouveauWorkflowPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="dest-file-path">Chemin de Destination</Label>
+                    <Label htmlFor="dest-file-path" className="text-blue-700">Chemin de Destination</Label>
                     <Input 
                       id="dest-file-path" 
                       placeholder="/chemin/vers/fichier_destination.csv"
                       value={lien}
                       onChange={(e) => setLien(e.target.value)}
+                      className="border-blue-300 focus:border-blue-500 focus:ring-blue-500"
                       disabled={isLoading}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="dest-delimiter">Délimiteur (pour CSV)</Label>
+                    <Label htmlFor="dest-delimiter" className="text-blue-700">Délimiteur (pour CSV)</Label>
                     <Select defaultValue="comma" disabled={isLoading}>
-                      <SelectTrigger>
+                      <SelectTrigger className="border-blue-300 focus:ring-blue-500">
                         <SelectValue placeholder="Sélectionnez un délimiteur" />
                       </SelectTrigger>
                       <SelectContent>
@@ -588,7 +647,7 @@ export default function NouveauWorkflowPage() {
                 </TabsContent>
                 <TabsContent value="api" className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="dest-api-url">URL de l'API</Label>
+                    <Label htmlFor="dest-api-url" className="text-blue-700">URL de l'API</Label>
                     <Input 
                       id="dest-api-url" 
                       placeholder="https://api.exemple.com/data"
@@ -597,13 +656,14 @@ export default function NouveauWorkflowPage() {
                         setLien(e.target.value)
                         setType("api")
                       }}
+                      className="border-blue-300 focus:border-blue-500 focus:ring-blue-500"
                       disabled={isLoading}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="dest-api-method">Méthode</Label>
+                    <Label htmlFor="dest-api-method" className="text-blue-700">Méthode</Label>
                     <Select defaultValue="post" disabled={isLoading}>
-                      <SelectTrigger>
+                      <SelectTrigger className="border-blue-300 focus:ring-blue-500">
                         <SelectValue placeholder="Sélectionnez une méthode" />
                       </SelectTrigger>
                       <SelectContent>
@@ -614,11 +674,11 @@ export default function NouveauWorkflowPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="dest-api-headers">En-têtes (format JSON)</Label>
+                    <Label htmlFor="dest-api-headers" className="text-blue-700">En-têtes (format JSON)</Label>
                     <Textarea
                       id="dest-api-headers"
                       placeholder='{"Authorization": "Bearer token", "Content-Type": "application/json"}'
-                      className="min-h-[100px]"
+                      className="min-h-[100px] border-blue-300 focus:border-blue-500 focus:ring-blue-500"
                       value={cle}
                       onChange={(e) => setCle(e.target.value)}
                       disabled={isLoading}
@@ -627,11 +687,20 @@ export default function NouveauWorkflowPage() {
                 </TabsContent>
               </Tabs>
             </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline" onClick={handlePrevious} disabled={isLoading}>
+            <CardFooter className="flex justify-between pt-4 border-t border-blue-100">
+              <Button 
+                variant="outline" 
+                onClick={handlePrevious} 
+                disabled={isLoading}
+                className="border-blue-300 text-blue-600 hover:bg-blue-50"
+              >
                 Précédent
               </Button>
-              <Button onClick={handleSubmit} disabled={(!lien || !type) || isLoading}>
+              <Button 
+                onClick={handleSubmit} 
+                disabled={(!lien || !type) || isLoading}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
                 <Play className="mr-2 h-4 w-4" />
                 Exécuter
               </Button>

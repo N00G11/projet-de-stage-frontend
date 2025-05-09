@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { EyeIcon, EyeOffIcon, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
+const API_BASE_URL = "https://localhost:8443/api"
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [username, setName] = useState("")
@@ -51,7 +52,7 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-        const response = await fetch("https://localhost:8443/api/auth/login", {
+        const response = await fetch(`${API_BASE_URL}/auth/login`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -63,8 +64,12 @@ export default function LoginPage() {
           const data = await response.json();
           throw new Error(data.message || "Erreur lors de l'inscription");
         }
+
         const rep = await response.json();
         localStorage.setItem("authToken", rep.token);
+        localStorage.setItem("username",username)
+
+
       router.push("/nouveau-workflow")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue lors de la connexion")
