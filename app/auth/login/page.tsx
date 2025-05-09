@@ -11,6 +11,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Checkbox } from "@/components/ui/checkbox"
 import { EyeIcon, EyeOffIcon, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import axiosInstance from '../../utils/request'
+
 
 const API_BASE_URL = "https://localhost:8443/api"
 export default function LoginPage() {
@@ -52,30 +54,37 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-        const response = await fetch(`${API_BASE_URL}/auth/login`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ username, password}),
+      setIsLoading(true);
+    
+      try {
+        const response = await axiosInstance.post('/auth/login', {
+          username,
+          password,
         });
-      
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.message || "Erreur lors de l'inscription");
-        }
-
-        const rep = await response.json();
-        localStorage.setItem("authToken", rep.token);
-        localStorage.setItem("username",username)
-
-
-      router.push("/nouveau-workflow")
+    
+        const { token } = response.data;
+    
+        // Stocker les informations dans localStorage
+        localStorage.setItem('authToken', token);
+        localStorage.setItem('username', username);
+    
+        // Naviguer vers la page "nouveau-workflow" après une connexion réussie
+        router.push("/nouveau-workflow");
+    
+        return token;
+      } catch (error) {
+        // Gérer l'erreur spécifique d'axios ou toute autre erreur
+        const message = "Password or username is not correct";
+        throw new Error(message);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue lors de la connexion")
+      // Gestion générale des erreurs
+      setError(err instanceof Error ? err.message : "Une erreur est survenue lors de la connexion");
     } finally {
-      setIsLoading(false)
+      // Arrêter le chargement
+      setIsLoading(false);
     }
+    
   }
 
   return (

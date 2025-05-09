@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { EyeIcon, EyeOffIcon, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import axiosInstance from '../../utils/request'
+
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -60,18 +62,11 @@ export default function RegisterPage() {
     setIsLoading(true)
 
     try {
-      const response = await fetch("https://localhost:8443/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, password, email }),
+      const response = await axiosInstance.post('/auth/register', {
+        username,
+        password,
+        email,
       });
-    
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || "Erreur lors de l'inscription");
-      }
 
       // Rediriger vers la page de nouveau workflow
       router.push("/auth/login")

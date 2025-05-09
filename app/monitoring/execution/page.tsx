@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CheckCircle, AlertTriangle, XCircle, History } from "lucide-react"
 import Link from "next/link"
+import axiosInstance from "@/app/utils/request"
 
 type log = {
   id?: string
@@ -20,40 +21,38 @@ type job = {
   status?: string
 }
 
+type  TimeResponse = {
+  extract: string;
+  transformation: string;
+  load: string;
+}
+
+
 const API_BASE_URL = "https://localhost:8443/api"
 
 export default function ExecutionMonitoringPage() {
   const [error,setError] = useState<string | null>(null)
-  const [token, setToken] = useState<string | null>(null)
-  const [progress, setProgress] = useState(0)
-  const [status, setStatus] = useState("")
+  const [time, setTime] = useState<TimeResponse>()
+  const [timeextract, setTimeExtract] = useState("")
+  const [timetransform, setTimeTransform] = useState("")
+  const [timeLoad, setTimeLoad] = useState("")
   const [record, setRecord] = useState("")
   const [logs, setLogs] = useState<log[]>([])
   const [job, setJob] = useState<job>()
   useEffect(() => {
-    const storedToken = localStorage.getItem("authToken")
-    if (storedToken) {
-      setToken(storedToken)
-      fetchLogs(storedToken)
-      fetchRecord(storedToken)
-      fetchjob(storedToken)
-      
-    } else {
-      setError("Authentification requise")
-    }
+      fetchLogs()
+      fetchRecord()
+      fetchjob()
+      fetchTime()
+
   }, [])
 
-  const fetchLogs = async (token: string) => {
-    try {
+  const fetchLogs = async () => {
+    try {  // Données fictives pour les logs
+      
       setError(null)
-      const response = await fetch(`${API_BASE_URL}/prosseces/job/alllogs`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      if (!response.ok) throw new Error(`Erreur HTTP ${response.status}`)
-      const logsData = await response.json()
+      const response = await axiosInstance.get("/prosseces/job/alllogs")
+      const logsData = await response.data
       const allogs: log[] = Array.isArray(logsData) ? logsData : logsData.allogs || []
 
       setLogs(allogs)
@@ -63,18 +62,11 @@ export default function ExecutionMonitoringPage() {
     }
   }
 
-  const fetchjob = async (token: string) => {
+  const fetchjob = async () => {
     try {
       setError(null)
-      const response = await fetch(`${API_BASE_URL}/prosseces/job`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      if (!response.ok) throw new Error(`Erreur HTTP ${response.status}`)
-      const jobData = await response.json()
-      //const jobs: job = jobData.jobs 
+      const response = await axiosInstance.get("/prosseces/job")
+      const jobData = await response.data
       setJob(jobData)
     } catch (err) {
       console.error("Erreur lors du chargement des données :", err)
@@ -83,21 +75,33 @@ export default function ExecutionMonitoringPage() {
   }
 
 
-  const fetchRecord = async (token: string) =>{
+  const fetchRecord = async () =>{
     try {
       setError(null)
-      const response = await fetch(`${API_BASE_URL}/prosseces/job/record`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      if (!response.ok) throw new Error(`Erreur HTTP ${response.status}`)
-      const rec = await response.json()
+      const response = await axiosInstance.get("/prosseces/job/record")
+      const rec = await response.data
       setRecord(rec)
     } catch (err) {
       console.error("Erreur lors du chargement des données :", err)
       setError(err instanceof Error ? err.message : "Une erreur inconnue est survenue")
+    }
+  }
+
+  const fetchTime = async () =>{
+    try{
+      setError(null)
+      const response = await axiosInstance.get("/prosseces/job/time/extract")
+      const extract = await response.data
+      setTimeExtract(extract)
+      const response1 = await axiosInstance.get("/prosseces/job/time/transform")
+      const transformation = await response1.data
+      setTimeTransform(transformation)
+      const response2 = await axiosInstance.get("/prosseces/job/time/load")
+      const load = await response2.data
+      setTimeLoad(load)
+    }catch(err){
+      console.error("Erreur lors du chargement des données :", err)
+      setError(err instanceof Error ? err.message : "une erreur inconnue est survenue")
     }
   }
 
@@ -126,7 +130,7 @@ export default function ExecutionMonitoringPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Statut</CardTitle>
-              {job?.status === "running" ? (
+              {job?.status === "en cour" ? (
                 <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
                   En cours
                 </Badge>
@@ -155,12 +159,32 @@ export default function ExecutionMonitoringPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Temp d'exécution</CardTitle>
-              <span className="text-sm font-medium">{Math.floor(125 / Math.max(1, progress / 10))} sec/100 enr.</span>
+              <CardTitle className="text-sm font-medium">Temp d'extraction</CardTitle>
+              <span className="text-sm font-medium">{timeextract}</span>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{Math.floor(1250 / Math.max(1, progress / 10))} enr/min</div>
-              <p className="text-xs text-muted-foreground">Vitesse moyenne</p>
+              <div className="text-2xl font-bold">{timeextract}</div>
+              <p className="text-xs text-muted-foreground">Temp d'extraction</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Temp de transformation</CardTitle>
+              <span className="text-sm font-medium">{timetransform}</span>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{timetransform}</div>
+              <p className="text-xs text-muted-foreground">Temp de transformation</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Temp de chargement</CardTitle>
+              <span className="text-sm font-medium">{timeLoad}</span>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{timeLoad}</div>
+              <p className="text-xs text-muted-foreground">Temp de chargement</p>
             </CardContent>
           </Card>
         </div>

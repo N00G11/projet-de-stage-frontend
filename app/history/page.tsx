@@ -33,10 +33,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react"
-
-import promise from '@/app/utils/page'
-
-const API_BASE_URL = "https://localhost:8443/api"
+import axiosInstance from '../utils/request'
 
 type Job = {
   id: string
@@ -71,30 +68,22 @@ export default function HistoryPage() {
   const jobsPerPage = 6
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("authToken")
     const storedUsername = localStorage.getItem("username")
-    if (storedToken && storedUsername) {
-      setToken(storedToken)
+    if (storedUsername) {
       setUsername(storedUsername)
-      fetchJobs(storedToken, storedUsername)
+      fetchJobs(storedUsername)
     } else {
       setError("Authentification requise")
       setLoading(false)
     }
   }, [])
 
-  const fetchJobs = async (token: string, username: string) => {
+  const fetchJobs = async (username: string) => {
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch(`${API_BASE_URL}/user/${username}/alljobs`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      if (!response.ok) throw new Error(`Erreur HTTP ${response.status}`)
-      const jobsData = await response.json()
+      const response = await axiosInstance.get(`/user/${username}/alljobs`)
+      const jobsData = await response.data
       const jobs: Job[] = Array.isArray(jobsData) ? jobsData : jobsData.jobs || []
       setAllJobs(jobs)
     } catch (err) {

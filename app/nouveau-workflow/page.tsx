@@ -11,8 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Play, ChevronLeft, FileText, Database, RefreshCw, ArrowRight, History } from "lucide-react"
 import Link from "next/link"
+import axiosInstance from '../utils/request'
 
-const API_BASE_URL = "https://localhost:8443/api"
+
 
 export default function NouveauWorkflowPage() {
   const [token, setToken] = useState<string | null>(null)
@@ -50,22 +51,9 @@ export default function NouveauWorkflowPage() {
 
   const fetchFields = async () => {
     if (!token) return
-
     try {
-      const response = await fetch(`${API_BASE_URL}/prosseces/oldKeys`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || "Erreur lors de la récupération des données")
-      }
-
-      const result = await response.json()
+      const response = await axiosInstance.get("/prosseces/oldKeys")
+      const result = await response.data
       setFields(Array.isArray(result) ? result : [])
     } catch (error) {
       setError(error instanceof Error ? error.message : "Erreur inconnue")
@@ -81,27 +69,12 @@ export default function NouveauWorkflowPage() {
   }, [token])
 
   const handleStep1 = async () => {
-    if (!token) {
-      setError("Token d'authentification manquant")
-      return false
-    }
-
     try {
       setIsLoading(true)
-      const response = await fetch(`${API_BASE_URL}/user/${username}/newintegration`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({ jobName, description }),
+      const response = await axiosInstance.post(`/user/${username}/newintegration`,{
+        jobName,
+        description,
       })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || "Erreur lors de l'enregistrement du job")
-      }
-
       return true
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue lors de l'enregistrement du job")
@@ -112,26 +85,13 @@ export default function NouveauWorkflowPage() {
   }
 
   const handleStep2 = async () => {
-    if (!token) {
-      setError("Token d'authentification manquant")
-      return false
-    }
-
     try {
       setIsLoading(true)
-      const response = await fetch(`${API_BASE_URL}/prosseces/datasource`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({ lien, cle, type }),
+      const response = await axiosInstance.post("/prosseces/datasource",{
+        lien,
+        cle,
+        type,
       })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || "Erreur lors de l'enregistrement de la source")
-      }
       fetchFields()
       return true
     } catch (err) {
@@ -143,29 +103,11 @@ export default function NouveauWorkflowPage() {
   }
 
   const handleStep3 = async () => {
-    if (!token) {
-      setError("Token d'authentification manquant")
-      return false
-    }
-
     try {
       setIsLoading(true)
       const transformationData = newKeys.map(key => key || "none");
 
-      const response = await fetch(`${API_BASE_URL}/prosseces/transformation`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify(transformationData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || "Erreur lors de l'enregistrement de la transformation")
-      }
-
+      const response = await axiosInstance.post("/prosseces/transformation",transformationData)
       return true
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue lors de l'enregistrement de la transformation")
@@ -215,26 +157,13 @@ export default function NouveauWorkflowPage() {
   }
 
   const handleSubmit = async () => {
-    if (!token) {
-      setError("Token d'authentification manquant")
-      return
-    }
-
     try {
       setIsLoading(true)
-      const response = await fetch(`${API_BASE_URL}/prosseces/datatarget`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({ lien, cle, type }),
+      const response = await axiosInstance.post("/prosseces/datatarget",{
+        lien,
+        cle,
+        type,
       })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || "Erreur lors de l'enregistrement de la cible")
-      }
 
       window.location.href = "/monitoring/execution"
     } catch (err) {
